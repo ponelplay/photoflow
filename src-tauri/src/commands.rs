@@ -96,41 +96,48 @@ fn is_hidden_or_system(_entry: &fs::DirEntry) -> bool {
 }
 
 #[tauri::command]
-pub fn list_dir(path: String) -> Result<DirListing, String> {
-    let mut folders = Vec::new();
-    let mut images = Vec::new();
+pub async fn list_dir(path: String) -> Result<DirListing, String> {
+    // Fora del fil principal: en unitats al núvol (Google Drive, OneDrive…)
+    // llegir el directori o les metadades pot bloquejar mentre s'hidraten
+    // els fitxers, i congelaria la UI.
+    tauri::async_runtime::spawn_blocking(move || {
+        let mut folders = Vec::new();
+        let mut images = Vec::new();
 
-    for entry in fs::read_dir(&path).map_err(|e| e.to_string())?.flatten() {
-        let name = entry.file_name().to_string_lossy().into_owned();
-        if name.starts_with('.') || name.starts_with('$') || is_hidden_or_system(&entry) {
-            continue;
-        }
-        let p = entry.path();
-        match entry.file_type() {
-            Ok(t) if t.is_dir() => folders.push(FolderEntry {
-                name,
-                path: p.to_string_lossy().into_owned(),
-            }),
-            Ok(t) if t.is_file() && is_image(&p) => {
-                let md = entry.metadata().ok();
-                images.push(ImageEntry {
+        for entry in fs::read_dir(&path).map_err(|e| e.to_string())?.flatten() {
+            let name = entry.file_name().to_string_lossy().into_owned();
+            if name.starts_with('.') || name.starts_with('$') || is_hidden_or_system(&entry) {
+                continue;
+            }
+            let p = entry.path();
+            match entry.file_type() {
+                Ok(t) if t.is_dir() => folders.push(FolderEntry {
                     name,
                     path: p.to_string_lossy().into_owned(),
-                    size: md.as_ref().map(|m| m.len()).unwrap_or(0),
-                    modified_ms: md
-                        .and_then(|m| m.modified().ok())
-                        .and_then(|t| t.duration_since(UNIX_EPOCH).ok())
-                        .map(|d| d.as_millis() as u64)
-                        .unwrap_or(0),
-                });
+                }),
+                Ok(t) if t.is_file() && is_image(&p) => {
+                    let md = entry.metadata().ok();
+                    images.push(ImageEntry {
+                        name,
+                        path: p.to_string_lossy().into_owned(),
+                        size: md.as_ref().map(|m| m.len()).unwrap_or(0),
+                        modified_ms: md
+                            .and_then(|m| m.modified().ok())
+                            .and_then(|t| t.duration_since(UNIX_EPOCH).ok())
+                            .map(|d| d.as_millis() as u64)
+                            .unwrap_or(0),
+                    });
+                }
+                _ => {}
             }
-            _ => {}
         }
-    }
 
-    folders.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
-    images.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
-    Ok(DirListing { folders, images })
+        folders.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
+        images.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
+        Ok(DirListing { folders, images })
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[derive(Serialize, Default)]
@@ -151,52 +158,58 @@ pub struct FileInfo {
 }
 
 #[tauri::command]
-pub fn file_info(path: String) -> Result<FileInfo, String> {
-    let p = PathBuf::from(&path);
-    let md = fs::metadata(&p).map_err(|e| e.to_string())?;
+pub async fn file_info(path: String) -> Result<FileInfo, String> {
+    // Fora del fil principal: descodificar dimensions i llegir l'EXIF obre el
+    // fitxer, i en unitats al núvol això força una baixada que bloquejaria la UI.
+    tauri::async_runtime::spawn_blocking(move || {
+        let p = PathBuf::from(&path);
+        let md = fs::metadata(&p).map_err(|e| e.to_string())?;
 
-    let mut info = FileInfo {
-        name: p
-            .file_name()
-            .map(|n| n.to_string_lossy().into_owned())
-            .unwrap_or_default(),
-        path: path.clone(),
-        size: md.len(),
-        modified_ms: md
-            .modified()
-            .ok()
-            .and_then(|t| t.duration_since(UNIX_EPOCH).ok())
-            .map(|d| d.as_millis() as u64)
-            .unwrap_or(0),
-        ..Default::default()
-    };
+        let mut info = FileInfo {
+            name: p
+                .file_name()
+                .map(|n| n.to_string_lossy().into_owned())
+                .unwrap_or_default(),
+            path: path.clone(),
+            size: md.len(),
+            modified_ms: md
+                .modified()
+                .ok()
+                .and_then(|t| t.duration_since(UNIX_EPOCH).ok())
+                .map(|d| d.as_millis() as u64)
+                .unwrap_or(0),
+            ..Default::default()
+        };
 
-    if let Ok((w, h)) = image::image_dimensions(&p) {
-        info.width = Some(w);
-        info.height = Some(h);
-    }
-
-    if let Ok(file) = fs::File::open(&p) {
-        let mut reader = std::io::BufReader::new(file);
-        if let Ok(meta) = exif::Reader::new().read_from_container(&mut reader) {
-            let get = |tag: exif::Tag| {
-                meta.get_field(tag, exif::In::PRIMARY).map(|f| {
-                    f.display_value()
-                        .with_unit(&meta)
-                        .to_string()
-                        .trim_matches('"')
-                        .to_string()
-                })
-            };
-            info.camera = get(exif::Tag::Model);
-            info.lens = get(exif::Tag::LensModel);
-            info.exposure = get(exif::Tag::ExposureTime);
-            info.aperture = get(exif::Tag::FNumber);
-            info.iso = get(exif::Tag::PhotographicSensitivity);
-            info.focal = get(exif::Tag::FocalLength);
-            info.taken = get(exif::Tag::DateTimeOriginal);
+        if let Ok((w, h)) = image::image_dimensions(&p) {
+            info.width = Some(w);
+            info.height = Some(h);
         }
-    }
 
-    Ok(info)
+        if let Ok(file) = fs::File::open(&p) {
+            let mut reader = std::io::BufReader::new(file);
+            if let Ok(meta) = exif::Reader::new().read_from_container(&mut reader) {
+                let get = |tag: exif::Tag| {
+                    meta.get_field(tag, exif::In::PRIMARY).map(|f| {
+                        f.display_value()
+                            .with_unit(&meta)
+                            .to_string()
+                            .trim_matches('"')
+                            .to_string()
+                    })
+                };
+                info.camera = get(exif::Tag::Model);
+                info.lens = get(exif::Tag::LensModel);
+                info.exposure = get(exif::Tag::ExposureTime);
+                info.aperture = get(exif::Tag::FNumber);
+                info.iso = get(exif::Tag::PhotographicSensitivity);
+                info.focal = get(exif::Tag::FocalLength);
+                info.taken = get(exif::Tag::DateTimeOriginal);
+            }
+        }
+
+        Ok(info)
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }

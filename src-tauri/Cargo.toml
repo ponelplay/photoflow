@@ -1,6 +1,6 @@
 [package]
 name = "app"
-version = "1.0.0"
+version = "1.0.1"
 description = "PhotoFlow — gestor de fotografies minimalista i eficient"
 authors = ["ponelplay"]
 license = "PolyForm-Noncommercial-1.0.0"
