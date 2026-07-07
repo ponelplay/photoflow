@@ -1,0 +1,166 @@
+/* ─────────────────────────────────────────────────────────────
+   PhotoFlow · Design tokens
+   Minimalisme càlid amb accent "hora daurada".
+   Tema clar per defecte; fosc via prefers-color-scheme o
+   [data-theme] estampat a <html>.
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  /* Tipografia */
+  --font-ui: "Segoe UI Variable Text", "Segoe UI Variable", "Segoe UI",
+    -apple-system, "SF Pro Text", sans-serif;
+  --font-display: "Segoe UI Variable Display", "Segoe UI Variable",
+    "Segoe UI", -apple-system, "SF Pro Display", sans-serif;
+  --font-mono: "Cascadia Mono", "Cascadia Code", "SF Mono", Consolas,
+    monospace;
+
+  --text-xs: 11px;
+  --text-sm: 12.5px;
+  --text-md: 13.5px;
+  --text-lg: 15px;
+  --text-xl: 20px;
+
+  /* Espaiat (escala de 4) */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+
+  /* Radis */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+
+  /* Mides de layout */
+  --titlebar-h: 44px;
+  --sidebar-w: 232px;
+  --infopanel-w: 280px;
+
+  /* Moviment */
+  --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --t-fast: 140ms var(--ease);
+  --t-med: 220ms var(--ease);
+
+  /* ── Tema clar (paper càlid) ── */
+  --bg-app: #f6f5f2;
+  --bg-panel: #fdfdfc;
+  --bg-sunken: #efeeea;
+  --bg-hover: rgba(20, 18, 12, 0.05);
+  --bg-active: rgba(20, 18, 12, 0.09);
+  --border: rgba(20, 18, 12, 0.1);
+  --border-strong: rgba(20, 18, 12, 0.16);
+
+  --ink: #1c1a16;
+  --ink-secondary: rgba(28, 26, 22, 0.62);
+  --ink-faint: rgba(28, 26, 22, 0.38);
+
+  /* Accent: hora daurada */
+  --accent: #c47d1e;
+  --accent-strong: #a8650e;
+  --accent-soft: rgba(196, 125, 30, 0.14);
+  --accent-ink: #fff;
+
+  --danger: #c2453a;
+
+  /* Canals de l'histograma (validats sobre --bg-sunken) */
+  --ch-r: #d05353;
+  --ch-g: #3f8a52;
+  --ch-b: #5a86d8;
+
+  --shadow-panel: 0 1px 2px rgba(20, 18, 12, 0.04),
+    0 4px 16px rgba(20, 18, 12, 0.05);
+  --shadow-float: 0 2px 6px rgba(20, 18, 12, 0.1),
+    0 12px 32px rgba(20, 18, 12, 0.14);
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-app: #131312;
+    --bg-panel: #1b1b19;
+    --bg-sunken: #0e0e0d;
+    --bg-hover: rgba(255, 250, 240, 0.06);
+    --bg-active: rgba(255, 250, 240, 0.11);
+    --border: rgba(255, 250, 240, 0.09);
+    --border-strong: rgba(255, 250, 240, 0.16);
+
+    --ink: #ebe8e2;
+    --ink-secondary: rgba(235, 232, 226, 0.6);
+    --ink-faint: rgba(235, 232, 226, 0.35);
+
+    --accent: #e0a24a;
+    --accent-strong: #edb35f;
+    --accent-soft: rgba(224, 162, 74, 0.16);
+    --accent-ink: #1c1508;
+
+    --danger: #e06258;
+
+    --ch-r: #d05353;
+    --ch-g: #4a9d5f;
+    --ch-b: #5a86d8;
+
+    --shadow-panel: 0 1px 2px rgba(0, 0, 0, 0.2),
+      0 4px 16px rgba(0, 0, 0, 0.25);
+    --shadow-float: 0 2px 6px rgba(0, 0, 0, 0.35),
+      0 16px 40px rgba(0, 0, 0, 0.5);
+
+    color-scheme: dark;
+  }
+}
+
+/* Override explícit de l'usuari (data-theme guanya sempre) */
+:root[data-theme="light"] {
+  --bg-app: #f6f5f2;
+  --bg-panel: #fdfdfc;
+  --bg-sunken: #efeeea;
+  --bg-hover: rgba(20, 18, 12, 0.05);
+  --bg-active: rgba(20, 18, 12, 0.09);
+  --border: rgba(20, 18, 12, 0.1);
+  --border-strong: rgba(20, 18, 12, 0.16);
+  --ink: #1c1a16;
+  --ink-secondary: rgba(28, 26, 22, 0.62);
+  --ink-faint: rgba(28, 26, 22, 0.38);
+  --accent: #c47d1e;
+  --accent-strong: #a8650e;
+  --accent-soft: rgba(196, 125, 30, 0.14);
+  --accent-ink: #fff;
+  --danger: #c2453a;
+  --ch-r: #d05353;
+  --ch-g: #3f8a52;
+  --ch-b: #5a86d8;
+  --shadow-panel: 0 1px 2px rgba(20, 18, 12, 0.04),
+    0 4px 16px rgba(20, 18, 12, 0.05);
+  --shadow-float: 0 2px 6px rgba(20, 18, 12, 0.1),
+    0 12px 32px rgba(20, 18, 12, 0.14);
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --bg-app: #131312;
+  --bg-panel: #1b1b19;
+  --bg-sunken: #0e0e0d;
+  --bg-hover: rgba(255, 250, 240, 0.06);
+  --bg-active: rgba(255, 250, 240, 0.11);
+  --border: rgba(255, 250, 240, 0.09);
+  --border-strong: rgba(255, 250, 240, 0.16);
+  --ink: #ebe8e2;
+  --ink-secondary: rgba(235, 232, 226, 0.6);
+  --ink-faint: rgba(235, 232, 226, 0.35);
+  --accent: #e0a24a;
+  --accent-strong: #edb35f;
+  --accent-soft: rgba(224, 162, 74, 0.16);
+  --accent-ink: #1c1508;
+  --danger: #e06258;
+  --ch-r: #d05353;
+  --ch-g: #4a9d5f;
+  --ch-b: #5a86d8;
+  --shadow-panel: 0 1px 2px rgba(0, 0, 0, 0.2),
+    0 4px 16px rgba(0, 0, 0, 0.25);
+  --shadow-float: 0 2px 6px rgba(0, 0, 0, 0.35),
+    0 16px 40px rgba(0, 0, 0, 0.5);
+  color-scheme: dark;
+}
