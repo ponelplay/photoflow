@@ -8,6 +8,14 @@ Image Viewer — rebuilt with a modern look and a tiny footprint.
 *Gestor de fotografies ràpid i minimalista per a Windows, inspirat en FastStone
 però amb aspecte modern. Interfície en català.*
 
+## Download
+
+**[⬇ Download the latest installer](https://github.com/ponelplay/photoflow/releases/latest)**
+(Windows 11, x64 · ~1.8 MB · needs WebView2, already bundled with Windows 11)
+
+On first launch Windows SmartScreen may warn about an unsigned app — click
+*More info → Run anyway*. The source in this repo is what the installer is built from.
+
 ## Features
 
 - **Browse your whole PC** — drive tree with lazy loading, quick links, instant
